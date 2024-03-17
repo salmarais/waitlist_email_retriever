@@ -13,12 +13,16 @@ fn main() {
 }
 
 fn get_waitlist_data_from_email_server(config: HashMap<String, String>, output_path: &str) {
-    let _port:u16 = config.get("port").get_or_insert(&"993".to_string()).parse().expect("failed to parse port");
+    let _port: u16 = config
+        .get("port")
+        .get_or_insert(&"993".to_string())
+        .parse()
+        .expect("failed to parse port");
     let mut email_client_service = email_client::EmailClient::new(
         config.get("domain").get_or_insert(&"".to_string()),
         _port,
         config.get("username").get_or_insert(&"".to_string()),
-        config.get("password").get_or_insert(&"".to_string())
+        config.get("password").get_or_insert(&"".to_string()),
     );
 
     let _messages = email_client_service.fetch_email_messages().unwrap();

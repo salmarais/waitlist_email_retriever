@@ -19,12 +19,15 @@ impl Drop for EmailClient {
 
 impl EmailClient {
     pub fn new(_domain: &str, _port: u16, _username: &str, _password: &str) -> Self {
-        let domain =if  _domain.is_empty() {"imap.hostinger.com" } else { _domain};
+        let domain = if _domain.is_empty() {
+            "imap.hostinger.com"
+        } else {
+            _domain
+        };
         let port = _port;
         let username = _username;
         let password = _password;
 
-        
         let tls = TlsConnector::builder().build().unwrap();
         let client = imap::connect((domain, port), domain, &tls).unwrap();
         let imap_session = client.login(username, password).expect("Failed to login");
@@ -86,14 +89,12 @@ fn retrieve_messages_from_mailbox(
     return Ok(messages);
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::HashSet;
-    
+
     struct MockEmailClient;
-    
 
     impl EmailClientTrait for MockEmailClient {
         fn fetch_email_messages(&self) -> Result<HashSet<u32>, String> {
@@ -119,7 +120,7 @@ mod tests {
 
         let bodies = email_client.retrieve_bodies(messages_result);
         assert_eq!(bodies.len(), 3); // Verify the mocked retrieve
-        // Further assertions to verify processing logic...
+                                     // Further assertions to verify processing logic...
     }
     #[test]
     fn test_retrieve_bodies() {
@@ -132,8 +133,14 @@ mod tests {
         assert_eq!(bodies.len(), 3);
 
         // Verify the content of the returned bodies if necessary
-        assert_eq!(bodies[0], "Reply-To: example@example.com\nType: Parent\nDate: Tue, 12 Oct 2024 14:23:00 +0000");
-        assert_eq!(bodies[1], "Reply-To:example@example.com\nType: Parent\nDate: Tue, 12 Oct 2024 14:23:00 +0000");
+        assert_eq!(
+            bodies[0],
+            "Reply-To: example@example.com\nType: Parent\nDate: Tue, 12 Oct 2024 14:23:00 +0000"
+        );
+        assert_eq!(
+            bodies[1],
+            "Reply-To:example@example.com\nType: Parent\nDate: Tue, 12 Oct 2024 14:23:00 +0000"
+        );
         assert_eq!(bodies[2], "Email body for message 3");
     }
 }

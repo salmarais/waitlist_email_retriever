@@ -53,7 +53,7 @@ mod tests {
     use super::*;
 
     #[test]
-    
+
     fn test_extract_email_addresses_from_body() {
         let body =
             "Reply-To: example@example.com\nType: Parent\nDate: Tue, 12 Oct 2024 14:23:00 +0000\n";
@@ -65,9 +65,6 @@ mod tests {
         assert_eq!(first_entry.get("Email").unwrap(), "example@example.com");
         assert_eq!(first_entry.get("Type").unwrap(), "Parent");
         // TODO: Fix this unit test
-        assert_eq!(
-            first_entry.get("Date").unwrap(),
-            "None"
-        );
+        assert_eq!(first_entry.get("Date").unwrap(), "None");
     }
 }
