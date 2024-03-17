@@ -1,7 +1,6 @@
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::io::Result;
 
 pub fn remove_duplicate_emails(
     data_list: Vec<HashMap<String, String>>,
