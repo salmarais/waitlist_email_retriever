@@ -1,4 +1,4 @@
-use imap::Session;
+use imap::{Session, Error};
 use native_tls::{TlsConnector, TlsStream};
 use std::{collections::HashSet, net::TcpStream};
 
@@ -33,13 +33,13 @@ impl EmailClient {
         let imap_session = client.login(username, password).expect("Failed to login");
 
         Self {
-            imap_session: imap_session, // Default value
+            imap_session // Default value
         }
     }
 
     pub fn fetch_email_messages(&mut self) -> Result<std::collections::HashSet<u32>, imap::Error> {
         let subject = "Waitlist";
-        return retrieve_messages_from_mailbox("INBOX", &mut self.imap_session, subject);
+        retrieve_messages_from_mailbox("INBOX", &mut self.imap_session, subject)
     }
 
     pub fn retrieve_bodies(mut self, messages: HashSet<u32>) -> Vec<String> {
@@ -64,7 +64,7 @@ impl EmailClient {
                 }
             }
         }
-        return bodies;
+        bodies
     }
 }
 
@@ -72,8 +72,8 @@ fn retrieve_messages_from_mailbox(
     mailbox_name: &str,
     imap_session: &mut Session<TlsStream<TcpStream>>,
     subject: &str,
-) -> Result<std::collections::HashSet<u32>, imap::Error> {
-    imap_session.select(mailbox_name)?;
+) -> Result<HashSet<u32>, Error> {
+    imap_session.select(mailbox_name).expect("Failed to retrieve mailbox");
 
     let messages = imap_session
         .search(format!("SUBJECT \"{}\"", subject))
@@ -86,7 +86,7 @@ fn retrieve_messages_from_mailbox(
         messages.len()
     );
 
-    return Ok(messages);
+    Ok(messages)
 }
 
 #[cfg(test)]

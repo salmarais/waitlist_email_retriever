@@ -1,4 +1,3 @@
-use serde_json;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Write};
@@ -43,7 +42,7 @@ pub fn write_data_to_md_table(
         let email = entry.get("Email").unwrap_or(&placeholder);
         let entry_type = entry.get("Type").unwrap_or(&placeholder);
         let date = entry.get("Date").unwrap_or(&placeholder);
-        if email != "" {
+        if !email.is_empty() {
             writeln!(file, "| {} | {} | {} |", email, entry_type, date)?;
         }
     }
@@ -57,7 +56,7 @@ pub fn write_data_to_json(
     // Open a file in write mode
     let path = Path::new(file_path);
     let display = path.display();
-    let mut file = match File::create(&path) {
+    let mut file = match File::create(path) {
         Err(why) => panic!("couldn't create {}: {}", display, why),
         Ok(file) => file,
     };
