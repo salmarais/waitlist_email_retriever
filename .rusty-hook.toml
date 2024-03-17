@@ -1,0 +1,6 @@
+[hooks]
+pre-commit = "cargo test --bin rusty-hook"
+pre-push = "cargo fmt -- --check"
+
+[logging]
+verbose = true
