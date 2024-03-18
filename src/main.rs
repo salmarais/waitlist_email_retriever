@@ -4,7 +4,6 @@ use std::collections::HashMap;
 mod email_client;
 mod email_extractor;
 mod io_manager;
-mod notion_client;
 mod sheets_client;
 mod utils;
 
