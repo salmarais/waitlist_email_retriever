@@ -1,4 +1,4 @@
-use imap::{Session, Error};
+use imap::{Error, Session};
 use native_tls::{TlsConnector, TlsStream};
 use std::{collections::HashSet, net::TcpStream};
 
@@ -33,7 +33,7 @@ impl EmailClient {
         let imap_session = client.login(username, password).expect("Failed to login");
 
         Self {
-            imap_session // Default value
+            imap_session, // Default value
         }
     }
 
@@ -73,7 +73,9 @@ fn retrieve_messages_from_mailbox(
     imap_session: &mut Session<TlsStream<TcpStream>>,
     subject: &str,
 ) -> Result<HashSet<u32>, Error> {
-    imap_session.select(mailbox_name).expect("Failed to retrieve mailbox");
+    imap_session
+        .select(mailbox_name)
+        .expect("Failed to retrieve mailbox");
 
     let messages = imap_session
         .search(format!("SUBJECT \"{}\"", subject))

@@ -33,3 +33,22 @@ pub fn read_config_from_file(file_path: &str) -> HashMap<String, String> {
 
     config_map
 }
+
+pub fn subtract_by_email(
+    vec1: Vec<HashMap<String, String>>,
+    vec2: Vec<HashMap<String, String>>,
+) -> Vec<HashMap<String, String>> {
+    // Step 1: Collect all emails from the second vector into a HashSet
+    let emails_in_vec2: HashSet<String> = vec2
+        .into_iter()
+        .filter_map(|map| map.get("Email").cloned())
+        .collect();
+
+    // Step 2: Filter the first vector
+    vec1.into_iter()
+        .filter(|map| {
+            map.get("Email")
+                .map_or(false, |email| !emails_in_vec2.contains(email))
+        })
+        .collect()
+}

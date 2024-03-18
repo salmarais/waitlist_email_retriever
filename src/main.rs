@@ -1,18 +1,105 @@
+use clap::Parser;
 use std::collections::HashMap;
+
 mod email_client;
 mod email_extractor;
 mod io_manager;
 mod notion_client;
+mod sheets_client;
 mod utils;
 
-fn main() {
-    let config: HashMap<String, String> = utils::read_config_from_file("local_config.json");
-    let output_path: &str = "output/";
-    std::fs::create_dir_all(output_path).unwrap();
-    get_waitlist_data_from_email_server(config, output_path);
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long, default_value_t = false)]
+    write_sheet_content: bool,
+
+    #[arg(short, long, default_value_t = String::from("local_config.json"))]
+    config_file_path: String,
+
+    #[arg(short, long, default_value_t = String::from("output"))]
+    output_dir: String,
+
+    #[arg(long, default_value_t = false)]
+    csv: bool,
+
+    #[arg(long, default_value_t = false)]
+    json: bool,
+
+    #[arg(long, default_value_t = false)]
+    md: bool,
 }
 
-fn get_waitlist_data_from_email_server(config: HashMap<String, String>, output_path: &str) {
+#[tokio::main]
+async fn main() {
+    let args = Args::parse();
+    
+
+    // Setting arguments
+    let config: HashMap<String, String> =
+        utils::read_config_from_file(args.config_file_path.as_str());
+
+    
+    let mut data_list = get_waitlist_data_from_email_server(config.clone());
+
+
+
+    // Saving content into files
+    let output_path: &str = args.output_dir.as_str();
+    std::fs::create_dir_all(output_path).unwrap();
+    if args.csv {
+        io_manager::write_data_to_csv(&data_list, format!("{output_path}/waitlist.csv").as_str());
+    }
+    if args.md {
+        io_manager::write_data_to_md_table(
+            &data_list,
+            format!("{output_path}/waitlist.md").as_str(),
+        );
+    }
+    if args.json {
+        io_manager::write_data_to_json(&data_list, format!("{output_path}/waitlist.json").as_str());
+    }
+
+    let mut sheets_client_service =
+        sheets_client::SheetClient::new(config.get("secret_file").get_or_insert(&"".to_string()));
+    let _hub = sheets_client_service.build_hub().await;
+
+    let current_sheet_content = sheets_client_service
+        .read_data_from_sheet(
+            _hub.clone(),
+            config
+                .get("spreadsheet_id")
+                .get_or_insert(&"".to_string())
+                .as_str(),
+            "A:C",
+        )
+        .await;
+
+    data_list = utils::subtract_by_email(data_list, current_sheet_content);
+    dbg!("Lines to add:");
+    dbg!(data_list.clone());
+
+    if args.write_sheet_content && !data_list.is_empty() {
+        sheets_client_service
+            .write_data_to_sheet(
+                _hub.clone(),
+                data_list,
+                config
+                    .get("spreadsheet_id")
+                    .get_or_insert(&"".to_string())
+                    .as_str(),
+                config
+                    .get("spreadsheet_start_range")
+                    .get_or_insert(&"A2:A2".to_string()),
+            )
+            .await;
+    }
+}
+
+fn get_waitlist_data_from_email_server(
+    config: HashMap<String, String>,
+) -> Vec<HashMap<String, String>> {
     let _port: u16 = config
         .get("port")
         .get_or_insert(&"993".to_string())
@@ -34,29 +121,5 @@ fn get_waitlist_data_from_email_server(config: HashMap<String, String>, output_p
     data_list = utils::remove_duplicate_emails(data_list);
     println!("Found {} unique email", data_list.len());
 
-    let csv_file_path = format!("{output_path}waitlist.csv");
-    let md_file_path = format!("{output_path}waitlist.md");
-    let json_file_path = format!("{output_path}waitlist.json");
-
-    // Call the function to write the emails to the CSV file
-    match io_manager::write_data_to_csv(&data_list, csv_file_path.as_str()) {
-        Ok(_) => println!("Emails have been written to {}", csv_file_path),
-        Err(e) => eprintln!("Failed to write emails to CSV: {}", e),
-    }
-
-    // Call the function to write the emails to the Markdown file
-    match io_manager::write_data_to_md_table(&data_list, md_file_path.as_str()) {
-        Ok(_) => println!("Emails have been written to {}", md_file_path),
-        Err(e) => eprintln!("Failed to write emails to CSV: {}", e),
-    }
-
-    match io_manager::write_data_to_json(&data_list, json_file_path.as_str()) {
-        Ok(_json_string) => {
-            println!("Serialized JSON String to file: {}", json_file_path);
-            // let notion_client_service = notion_client::NotionClient::new();
-            // notion_client_service.set_waitlist_database_properties();
-            // You can now use json_string for your JSON request
-        }
-        Err(e) => eprintln!("Failed to serialize data to JSON: {}", e),
-    }
+    data_list
 }

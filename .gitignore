@@ -1,3 +1,4 @@
 /target
 local_config.json
 output/
+private_key.json
